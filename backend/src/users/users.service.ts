@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./user.model";
 import { Repository } from "typeorm";
@@ -20,5 +20,16 @@ export class UsersService {
     }
     getUserById(id: string): Promise<User | null> {
         return this.usersRepository.findOneBy({ id });
+    }
+
+    findAll() {
+        return this.usersRepository.find();
+    }
+
+    async updateRole(id: string, role: string) {
+        const user = await this.usersRepository.findOne({ where: { id } });
+        if (!user) throw new NotFoundException("User not found");
+        user.role = role;
+        return this.usersRepository.save(user);
     }
 }
