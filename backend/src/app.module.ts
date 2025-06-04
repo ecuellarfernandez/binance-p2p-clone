@@ -16,6 +16,7 @@ import { CoinsModule } from "./coins/coins.module";
 import { WalletsModule } from "./wallets/wallets.module";
 import { Coin } from "./coins/entity/coin.entity";
 import { Wallet } from "./wallets/entity/wallet.entity";
+import { TransactionsModule } from './transactions/transactions.module';
 dotenv.config();
 
 @Module({
@@ -55,6 +56,7 @@ dotenv.config();
         UsersModule,
         CoinsModule,
         WalletsModule,
+        TransactionsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

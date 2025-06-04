@@ -1,6 +1,7 @@
 import { Coin } from "src/coins/entity/coin.entity";
+import { Transaction } from "src/transactions/entity/transaction.entity";
 import { User } from "src/users/user.model";
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Wallet {
@@ -15,4 +16,7 @@ export class Wallet {
 
     @Column("float", { default: 0 })
     balance: number;
+
+    @OneToMany(() => Transaction, transaction => transaction.wallet)
+    transactions: Transaction[];
 }
