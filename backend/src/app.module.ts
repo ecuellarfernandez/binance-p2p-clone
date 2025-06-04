@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { DataSource } from "typeorm";
+import { DataSource, Transaction } from "typeorm";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { MulterModule } from "@nestjs/platform-express";
@@ -16,8 +16,9 @@ import { CoinsModule } from "./coins/coins.module";
 import { WalletsModule } from "./wallets/wallets.module";
 import { Coin } from "./coins/entity/coin.entity";
 import { Wallet } from "./wallets/entity/wallet.entity";
-import { TransactionsModule } from './transactions/transactions.module';
-import { AdsModule } from './ads/ads.module';
+import { TransactionsModule } from "./transactions/transactions.module";
+import { AdsModule } from "./ads/ads.module";
+import { Ad } from "./ads/entity/ad.entity";
 dotenv.config();
 
 @Module({
@@ -50,7 +51,7 @@ dotenv.config();
             username: process.env.DB_USER,
             password: String(process.env.DB_PASSWORD),
             database: process.env.DB_NAME,
-            entities: [User, Wallet, Coin],
+            entities: [__dirname + "/**/*.entity{.ts,.js}", User, Wallet, Coin, Transaction, Ad],
             synchronize: true, //solo mientras estén en desarrollo
         }),
         AuthModule,
