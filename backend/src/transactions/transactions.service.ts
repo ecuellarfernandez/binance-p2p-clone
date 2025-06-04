@@ -120,7 +120,9 @@ export class TransactionsService {
         return { fromTx, toTx };
     }
 
-    async getWalletTransactions(walletId: string) {
+    async getWalletTransactions(walletId: string, user: User) {
+        const wallet = await this.walletsRepository.findOne({ where: { id: walletId }, relations: ["user"] });
+        if (!wallet || wallet.user.id !== user.id) throw new Error("Unauthorized");
         return this.transactionsRepository.find({
             where: { wallet: { id: walletId } },
             order: { createdAt: "DESC" },
