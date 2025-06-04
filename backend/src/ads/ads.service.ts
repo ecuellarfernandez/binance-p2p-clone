@@ -1,12 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, Transaction } from "typeorm";
 import { Ad, AdType } from "./entity/ad.entity";
 import { CreateAdDto } from "./dtos/create-ad.dto";
 import { User } from "src/users/user.model";
 import { Coin } from "src/coins/entity/coin.entity";
 import { SelectAdDto } from "./dtos/select-ad.dto";
-import { TransactionsService } from "src/transactions/transactions.service";
 import { Wallet } from "src/wallets/entity/wallet.entity";
 
 @Injectable()
@@ -18,6 +17,8 @@ export class AdsService {
         private coinsRepository: Repository<Coin>,
         @InjectRepository(Wallet)
         private walletsRepository: Repository<Wallet>,
+        @InjectRepository(Transaction)
+        private transactionsRepository: Repository<Transaction>,
     ) {}
 
     async create(user: User, dto: CreateAdDto, paymentInstructionsImage?: string) {
@@ -39,7 +40,7 @@ export class AdsService {
         });
     }
 
-    async selectAd(user: User, dto: SelectAdDto, transactionsService: TransactionsService) {
+    async selectAd(user: User, dto: SelectAdDto) {
         const ad = await this.adsRepository.findOne({ where: { id: dto.adId, active: true }, relations: ["user", "coin"] });
         if (!ad) throw new Error("Ad not found or inactive");
         if (dto.amount > ad.amount) throw new Error("Amount exceeds ad availability");
@@ -65,7 +66,7 @@ export class AdsService {
         if (!buyerWalletId || !sellerWalletId) throw new Error("Ad owner does not have a wallet for this coin");
 
         // Iniciar la transacción P2P
-        const transaction = await transactionsService.startTrade({
+        const transaction = await this.transactionsRepository.startTrade({
             buyerWalletId,
             sellerWalletId,
             amount: dto.amount,
