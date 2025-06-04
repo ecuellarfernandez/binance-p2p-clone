@@ -1,12 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Transaction } from "typeorm";
+import { Repository } from "typeorm";
 import { Ad, AdType } from "./entity/ad.entity";
 import { CreateAdDto } from "./dtos/create-ad.dto";
 import { User } from "src/users/user.model";
 import { Coin } from "src/coins/entity/coin.entity";
 import { SelectAdDto } from "./dtos/select-ad.dto";
 import { Wallet } from "src/wallets/entity/wallet.entity";
+import { TransactionsService } from "src/transactions/transactions.service";
 
 @Injectable()
 export class AdsService {
@@ -17,8 +18,8 @@ export class AdsService {
         private coinsRepository: Repository<Coin>,
         @InjectRepository(Wallet)
         private walletsRepository: Repository<Wallet>,
-        @InjectRepository(Transaction)
-        private transactionsRepository: Repository<Transaction>,
+        @Inject(forwardRef(() => TransactionsService))
+        private transactionsService: TransactionsService,
     ) {}
 
     async create(user: User, dto: CreateAdDto, paymentInstructionsImage?: string) {
@@ -66,7 +67,7 @@ export class AdsService {
         if (!buyerWalletId || !sellerWalletId) throw new Error("Ad owner does not have a wallet for this coin");
 
         // Iniciar la transacción P2P
-        const transaction = await this.transactionsRepository.startTrade({
+        const transaction = await this.transactionsService.startTrade({
             buyerWalletId,
             sellerWalletId,
             amount: dto.amount,
