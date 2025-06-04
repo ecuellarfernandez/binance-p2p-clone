@@ -4,13 +4,13 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
 @Entity()
 export class Wallet {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn("uuid")
+    id: string;
 
-    @ManyToOne(() => User, user => user.wallets)
+    @ManyToOne(() => User, user => user.wallets, { eager: false, onDelete: "CASCADE" })
     user: User;
 
-    @ManyToOne(() => Coin)
+    @ManyToOne(() => Coin, { eager: true, onDelete: "CASCADE" })
     coin: Coin;
 
     @Column("float", { default: 0 })
