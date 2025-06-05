@@ -13,6 +13,6 @@ import { WalletsModule } from "src/wallets/wallets.module";
     imports: [TypeOrmModule.forFeature([Ad, Coin, Wallet]), forwardRef(() => TransactionsModule), forwardRef(() => UsersModule), forwardRef(() => WalletsModule)],
     providers: [AdsService],
     controllers: [AdsController],
-    exports: [AdsService],
+    exports: [AdsService, TypeOrmModule],
 })
 export class AdsModule {}

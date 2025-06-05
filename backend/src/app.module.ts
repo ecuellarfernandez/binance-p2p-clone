@@ -1,11 +1,10 @@
-import { HttpException, HttpStatus, Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { DataSource, Transaction } from "typeorm";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { MulterModule } from "@nestjs/platform-express";
-import { diskStorage } from "multer";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { AuthModule } from "./auth/auth.module";
@@ -24,22 +23,7 @@ dotenv.config();
 @Module({
     imports: [
         ConfigModule.forRoot(),
-        MulterModule.register({
-            storage: diskStorage({
-                destination: "./uploads", // Directorio donde se guardarán los archivos
-                filename: (req, file, callback) => {
-                    const idSuffix = req.params.id;
-                    const extension = file.originalname.split(".").pop();
-                    //aceptar solo jpg
-                    if (extension !== "jpg") {
-                        callback(new HttpException("Only jpg files allowed", HttpStatus.BAD_REQUEST), "");
-                    }
-
-                    const filename = idSuffix + "." + extension;
-                    callback(null, filename);
-                },
-            }),
-        }),
+        MulterModule.register(),
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, "..", "uploads"), // La ruta desde la que se servirán los archivos
             serveRoot: "/uploads", // La ruta desde la que se accederá a los archivos

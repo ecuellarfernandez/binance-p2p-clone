@@ -23,13 +23,13 @@ export default function Navbar() {
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/ads" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
-                                    Anuncios
+                                <Link to="/coins" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                    Coins
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/coins" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
-                                    Coins
+                                <Link to="/my-ads" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                    My ads
                                 </Link>
                             </li>
                         </ul>

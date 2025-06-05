@@ -27,8 +27,8 @@ export class AdsController {
         return this.adsService.selectAd(req.user, dto);
     }
 
-    @Get("all")
-    async listAllAds() {
-        return this.adsService.findAllAds();
+    @Get("my-ads")
+    getMyAds(@Request() req) {
+        return this.adsService.getMyAds(req.user.id);
     }
 }

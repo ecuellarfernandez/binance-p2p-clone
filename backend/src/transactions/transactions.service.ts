@@ -1,12 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Transaction, TransactionType, TransactionStatus } from "./entity/transaction.entity";
 import { Repository } from "typeorm";
 import { Wallet } from "src/wallets/entity/wallet.entity";
 import { User } from "src/users/user.model";
 import { StartTradeDto } from "./dtos/start-trade.dto";
-import { MarkAsPaidDto } from "./dtos/mark-as-paid.dto";
 import { TransferDto } from "./dtos/transfer.dto";
+import { Ad } from "src/ads/entity/ad.entity";
 
 @Injectable()
 export class TransactionsService {
@@ -15,6 +15,8 @@ export class TransactionsService {
         private transactionsRepository: Repository<Transaction>,
         @InjectRepository(Wallet)
         private walletsRepository: Repository<Wallet>,
+        @InjectRepository(Ad)
+        private adsRepository: Repository<Ad>,
     ) {}
 
     // Iniciar compra/venta entre dos usuarios (P2P)
@@ -48,16 +50,52 @@ export class TransactionsService {
         return this.transactionsRepository.save(transaction);
     }
 
-    // El comprador marca como pagada la transacción (sube comprobante)
-    async markAsPaid(transactionId: string, user: User, dto: MarkAsPaidDto) {
-        const transaction = await this.transactionsRepository.findOne({ where: { id: transactionId }, relations: ["wallet", "counterpartyWallet"] });
+    async markAsPaid(transactionId: string, user: User, paymentProofFilename: string) {
+        const transaction = await this.transactionsRepository.findOne({
+            where: { id: transactionId },
+            relations: ["wallet", "counterpartyWallet"],
+        });
         if (!transaction) throw new NotFoundException("Transaction not found");
         if (transaction.wallet.user.id !== user.id) throw new BadRequestException("Only the buyer can mark as paid");
         if (transaction.status !== TransactionStatus.PENDING) throw new BadRequestException("Transaction is not pending");
+
         transaction.status = TransactionStatus.PAID;
-        if (dto.paymentProof) transaction.paymentProof = dto.paymentProof;
-        if (dto.paymentProofText) transaction.description = dto.paymentProofText;
+        transaction.paymentProof = paymentProofFilename;
+
         return this.transactionsRepository.save(transaction);
+    }
+
+    async createTransactionWithProof(adId: string, user: User, paymentProofFilename: string) {
+        const ad = await this.adsRepository.findOne({
+            where: { id: adId, active: true },
+            relations: ["user", "user.wallets", "coin"],
+        });
+        if (!ad) throw new NotFoundException("Anuncio no encontrado o inactivo");
+
+        const buyerWallet = await this.walletsRepository.findOne({
+            where: { user: { id: user.id }, coin: { id: ad.coin.id } },
+        });
+        if (!buyerWallet) throw new BadRequestException("No tienes una billetera para esta moneda");
+
+        const sellerWallet = ad.user.wallets.find(wallet => wallet.coin.id === ad.coin.id);
+        if (!sellerWallet) throw new NotFoundException("El vendedor no tiene una billetera para esta moneda");
+        if (!paymentProofFilename) {
+            throw new BadRequestException("El nombre del archivo de comprobante de pago es obligatorio.");
+        }
+
+        const transaction = this.transactionsRepository.create({
+            wallet: buyerWallet,
+            counterpartyWallet: sellerWallet,
+            type: TransactionType.BUY,
+            amount: ad.amount,
+            description: ad.description,
+            status: TransactionStatus.PENDING,
+            paymentProof: paymentProofFilename, // Asigna el nombre del archivo
+        });
+
+        console.log("Transacción creada con comprobante:", transaction); // Depuración adicional
+
+        return await this.transactionsRepository.save(transaction);
     }
 
     // El vendedor finaliza la transacción (mueve fondos)
@@ -139,5 +177,43 @@ export class TransactionsService {
             where: { wallet: { id: walletId } },
             order: { createdAt: "DESC" },
         });
+    }
+
+    async getTransactionById(transactionId: string) {
+        const transaction = await this.transactionsRepository.findOne({
+            where: { id: transactionId },
+            relations: ["wallet", "counterpartyWallet"],
+        });
+        if (!transaction) throw new NotFoundException("Transaction not found");
+        return transaction;
+    }
+
+    async getPaymentProof(transactionId: string, user: User) {
+        const transaction = await this.transactionsRepository.findOne({
+            where: { id: transactionId },
+            relations: ["counterpartyWallet"],
+        });
+        if (!transaction) throw new NotFoundException("Transaction not found");
+        if (transaction.counterpartyWallet.user.id !== user.id) {
+            throw new ForbiddenException("You are not authorized to view this payment proof");
+        }
+        return { paymentProof: transaction.paymentProof };
+    }
+
+    async finalizeTransaction(transactionId: string, user: User) {
+        const transaction = await this.transactionsRepository.findOne({
+            where: { id: transactionId },
+            relations: ["wallet", "counterpartyWallet"],
+        });
+        if (!transaction) throw new NotFoundException("Transaction not found");
+        if (transaction.counterpartyWallet.user.id !== user.id) {
+            throw new ForbiddenException("Only the seller can finalize this transaction");
+        }
+        if (transaction.status !== TransactionStatus.PAID) {
+            throw new BadRequestException("Transaction must be in PAID status to finalize");
+        }
+
+        transaction.status = TransactionStatus.COMPLETED;
+        return this.transactionsRepository.save(transaction);
     }
 }

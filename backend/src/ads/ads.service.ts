@@ -116,9 +116,10 @@ export class AdsService {
         return transaction;
     }
 
-    async findAllAds() {
+    async getMyAds(userId: string) {
         return this.adsRepository.find({
-            relations: ["coin", "user"], // Incluir relaciones necesarias
+            where: { user: { id: userId } },
+            relations: ["coin"],
             order: { createdAt: "DESC" },
         });
     }

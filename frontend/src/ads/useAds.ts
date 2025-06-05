@@ -13,6 +13,7 @@ export type Ad = {
     paymentInstructionsText?: string;
     active: boolean;
     createdAt: string;
+    transactionId?: string;
 };
 
 export function useAds(coinId: string, type: "buy" | "sell", token: string) {
