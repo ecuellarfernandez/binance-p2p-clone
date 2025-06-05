@@ -230,41 +230,52 @@ export class TransactionsService {
         });
     }
 
-    // Transferencia directa entre billeteras (con conversión)
     async transfer(user: User, dto: TransferDto) {
         return await this.transactionsRepository.manager.transaction(async transactionalEntityManager => {
             if (dto.fromWalletId === dto.toWalletId) {
                 throw new BadRequestException("No puedes transferir a la misma billetera");
             }
 
-            // Buscar billeteras con bloqueo para evitar condiciones de carrera
+            // First fetch the base wallets without any relations or locks
+            const fromWalletBase = await transactionalEntityManager.findOne(Wallet, {
+                where: { id: dto.fromWalletId },
+            });
+
+            const toWalletBase = await transactionalEntityManager.findOne(Wallet, {
+                where: { id: dto.toWalletId },
+            });
+
+            if (!fromWalletBase || !toWalletBase) {
+                throw new NotFoundException("Billetera no encontrada");
+            }
+
+            // Now lock the rows using a raw query which allows pessimistic locking without joins
+            await transactionalEntityManager.query("SELECT * FROM wallet WHERE id = $1 FOR UPDATE", [fromWalletBase.id]);
+            await transactionalEntityManager.query("SELECT * FROM wallet WHERE id = $1 FOR UPDATE", [toWalletBase.id]);
+
+            // Then load relations separately
             const fromWallet = await transactionalEntityManager.findOne(Wallet, {
                 where: { id: dto.fromWalletId },
                 relations: ["user", "coin"],
-                lock: { mode: "pessimistic_write" },
             });
 
             const toWallet = await transactionalEntityManager.findOne(Wallet, {
                 where: { id: dto.toWalletId },
                 relations: ["user", "coin"],
-                lock: { mode: "pessimistic_write" },
             });
 
-            // Validaciones
-            if (!fromWallet || !toWallet) {
-                throw new NotFoundException("Billetera no encontrada");
-            }
-
-            if (fromWallet.user.id !== user.id) {
+            if (!fromWallet || !fromWallet.user || fromWallet.user.id !== user.id) {
                 throw new ForbiddenException("Solo puedes transferir desde tu propia billetera");
             }
 
-            if (fromWallet.balance < dto.amount) {
+            if (fromWalletBase.balance < dto.amount) {
                 throw new BadRequestException("Fondos insuficientes");
             }
 
-            // Calcular conversión si las monedas son diferentes
             let convertedAmount = dto.amount;
+            if (!toWallet) {
+                throw new NotFoundException("Billetera de destino no encontrada");
+            }
             if (fromWallet.coin.id !== toWallet.coin.id) {
                 if (!fromWallet.coin.valueInUsd || !toWallet.coin.valueInUsd || fromWallet.coin.valueInUsd <= 0 || toWallet.coin.valueInUsd <= 0) {
                     throw new BadRequestException("No se puede realizar la conversión entre estas monedas");
@@ -272,14 +283,14 @@ export class TransactionsService {
                 convertedAmount = dto.amount * (fromWallet.coin.valueInUsd / toWallet.coin.valueInUsd);
             }
 
-            // Actualizar saldos
-            fromWallet.balance -= dto.amount;
-            toWallet.balance += convertedAmount;
+            // Update base wallet balances
+            fromWalletBase.balance -= dto.amount;
+            toWalletBase.balance += convertedAmount;
 
-            // Crear registros de transacción para ambas partes
+            // Create transaction records
             const fromTx = transactionalEntityManager.create(Transaction, {
-                wallet: fromWallet,
-                counterpartyWallet: toWallet,
+                wallet: fromWalletBase,
+                counterpartyWallet: toWalletBase,
                 type: TransactionType.TRANSFER,
                 amount: -dto.amount,
                 description: dto.description ?? `Transferencia a billetera ${toWallet.id} (${toWallet.coin.symbol})`,
@@ -287,16 +298,16 @@ export class TransactionsService {
             });
 
             const toTx = transactionalEntityManager.create(Transaction, {
-                wallet: toWallet,
-                counterpartyWallet: fromWallet,
+                wallet: toWalletBase,
+                counterpartyWallet: fromWalletBase,
                 type: TransactionType.TRANSFER,
                 amount: convertedAmount,
                 description: dto.description ?? `Transferencia desde billetera ${fromWallet.id} (${fromWallet.coin.symbol})`,
                 status: TransactionStatus.COMPLETED,
             });
 
-            // Guardar todo en una sola transacción
-            await transactionalEntityManager.save([fromWallet, toWallet]);
+            // Save in a single transaction
+            await transactionalEntityManager.save([fromWalletBase, toWalletBase]);
             await transactionalEntityManager.save([fromTx, toTx]);
 
             return { fromTx, toTx };
