@@ -20,9 +20,10 @@ export default function TradePage() {
     const [price, setPrice] = useState<number>(0);
     const [description, setDescription] = useState("");
 
-    // Obtener el nombre de la moneda desde las billeteras
+    // Obtener la billetera asociada a la moneda seleccionada
     const wallet = wallets.find(w => w.coin.id === coinId);
     const coinName = wallet?.coin.name || "Moneda desconocida";
+    const coinBalance = wallet?.balance || 0; // Saldo de la moneda
 
     const handleSelectAd = async (adId: string) => {
         try {
@@ -44,10 +45,7 @@ export default function TradePage() {
             setMessage({ text: error.message, type: "error" });
         }
     };
-    if (!coinId || typeof coinId !== "string") {
-        setMessage({ text: "El ID de la moneda no es válido.", type: "error" });
-        return;
-    }
+
     const handleCreateAd = async () => {
         try {
             if (!user) {
@@ -65,12 +63,17 @@ export default function TradePage() {
                 return;
             }
 
-            // Asegúrate de pasar coinId al crear el anuncio
+            // Validar saldo para anuncios de venta
+            if (type === "sell" && wallet.balance < amount) {
+                setMessage({ text: "No tienes suficiente saldo para crear este anuncio de venta.", type: "error" });
+                return;
+            }
+
             await createAd(wallet.id, type, amount, price, description, coinId!);
             setMessage({ text: "Anuncio creado exitosamente.", type: "success" });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            setMessage({ text: error.message, type: "error" });
+            setMessage({ text: error.message || "Error al crear el anuncio.", type: "error" });
         }
     };
 
@@ -139,9 +142,19 @@ export default function TradePage() {
                                 type="number"
                                 placeholder="Cantidad"
                                 value={amount}
-                                onChange={e => setAmount(Number(e.target.value))}
+                                onChange={e => {
+                                    const value =
+                                        type === "sell"
+                                            ? Math.min(Number(e.target.value), coinBalance) // Limitar al saldo disponible si es venta
+                                            : Number(e.target.value); // Sin límite si es compra
+                                    setAmount(value >= 0 ? value : 0); // Evitar valores negativos
+                                }}
+                                max={type === "sell" ? coinBalance : undefined} // Establecer el saldo como máximo solo si es venta
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200"
                             />
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {type === "sell" ? `Saldo disponible: ${coinBalance}` : "Sin límite de cantidad para compra"}
+                            </p>
                         </div>
                         <div>
                             <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
