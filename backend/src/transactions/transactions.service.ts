@@ -236,7 +236,6 @@ export class TransactionsService {
                 throw new BadRequestException("No puedes transferir a la misma billetera");
             }
 
-            // First fetch the base wallets without any relations or locks
             const fromWalletBase = await transactionalEntityManager.findOne(Wallet, {
                 where: { id: dto.fromWalletId },
             });
@@ -249,11 +248,9 @@ export class TransactionsService {
                 throw new NotFoundException("Billetera no encontrada");
             }
 
-            // Now lock the rows using a raw query which allows pessimistic locking without joins
             await transactionalEntityManager.query("SELECT * FROM wallet WHERE id = $1 FOR UPDATE", [fromWalletBase.id]);
             await transactionalEntityManager.query("SELECT * FROM wallet WHERE id = $1 FOR UPDATE", [toWalletBase.id]);
 
-            // Then load relations separately
             const fromWallet = await transactionalEntityManager.findOne(Wallet, {
                 where: { id: dto.fromWalletId },
                 relations: ["user", "coin"],
@@ -283,11 +280,9 @@ export class TransactionsService {
                 convertedAmount = dto.amount * (fromWallet.coin.valueInUsd / toWallet.coin.valueInUsd);
             }
 
-            // Update base wallet balances
             fromWalletBase.balance -= dto.amount;
             toWalletBase.balance += convertedAmount;
 
-            // Create transaction records
             const fromTx = transactionalEntityManager.create(Transaction, {
                 wallet: fromWalletBase,
                 counterpartyWallet: toWalletBase,
@@ -306,7 +301,6 @@ export class TransactionsService {
                 status: TransactionStatus.COMPLETED,
             });
 
-            // Save in a single transaction
             await transactionalEntityManager.save([fromWalletBase, toWalletBase]);
             await transactionalEntityManager.save([fromTx, toTx]);
 
