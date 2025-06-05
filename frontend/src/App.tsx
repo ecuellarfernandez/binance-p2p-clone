@@ -16,7 +16,7 @@ export default function App() {
                 <Router>
                     <MessageDisplay />
                     <Routes>
-                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/" element={<LoginPage />} />
                         <Route
                             path="/wallets"
                             element={

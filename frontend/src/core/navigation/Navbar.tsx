@@ -27,6 +27,11 @@ export default function Navbar() {
                                     Anuncios
                                 </Link>
                             </li>
+                            <li>
+                                <Link to="/coins" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                    Coins
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                     {token && (
