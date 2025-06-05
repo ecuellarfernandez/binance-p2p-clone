@@ -31,7 +31,7 @@ export class AdsController {
                 }
                 callback(null, true);
             },
-        })
+        }),
     )
     create(@Request() req, @Body() dto: CreateAdDto, @UploadedFile() file?: Express.Multer.File) {
         console.log("DTO recibido:", dto);
