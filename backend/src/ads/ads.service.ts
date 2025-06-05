@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Not, Repository } from "typeorm";
 import { Ad, AdType } from "./entity/ad.entity";
@@ -25,7 +25,20 @@ export class AdsService {
     async create(user: User, dto: CreateAdDto, paymentInstructionsImage?: string) {
         try {
             const coin = await this.coinsRepository.findOne({ where: { id: dto.coinId } });
-            if (!coin) throw new Error("Coin not found");
+            if (!coin) throw new BadRequestException("La moneda especificada no existe.");
+
+            // Verificar si es un anuncio de venta
+            if (dto.type === AdType.SELL) {
+                const wallet = await this.walletsRepository.findOne({
+                    where: { user: { id: user.id }, coin: { id: dto.coinId } },
+                });
+
+                if (!wallet) throw new BadRequestException("No tienes una billetera para esta moneda.");
+                if (wallet.balance < dto.amount) {
+                    throw new BadRequestException("Saldo insuficiente para crear un anuncio de venta.");
+                }
+            }
+
             const ad = this.adsRepository.create({
                 ...dto,
                 user,
@@ -34,7 +47,10 @@ export class AdsService {
             });
             return await this.adsRepository.save(ad);
         } catch (error) {
-            throw new Error(`Error creating ad: ${error.message}`);
+            if (error instanceof BadRequestException) {
+                throw error; // Re-lanzar errores de tipo BadRequestException
+            }
+            throw new Error(`Error creando el anuncio: ${error.message}`);
         }
     }
 
