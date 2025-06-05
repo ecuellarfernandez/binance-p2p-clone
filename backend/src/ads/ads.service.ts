@@ -51,24 +51,31 @@ export class AdsService {
         if (dto.amount > ad.amount) throw new Error("Amount exceeds ad availability");
         if (ad.user.id === user.id) throw new Error("Cannot trade with your own ad");
 
-        // Wallet del usuario que inicia la operación
-        const userWallet = await this.walletsRepository.findOne({ where: { id: dto.walletId, user: { id: user.id }, coin: { id: ad.coin.id } } });
-        if (!userWallet) throw new Error("You must have a wallet for this coin");
+        // Verificar o crear la billetera del usuario que inicia la transacción
+        let userWallet = await this.walletsRepository.findOne({ where: { user: { id: user.id }, coin: { id: ad.coin.id } } });
+        if (!userWallet) {
+            // Crear billetera automáticamente si no existe
+            userWallet = this.walletsRepository.create({
+                user,
+                coin: ad.coin,
+                balance: 0, // Inicializar con saldo 0
+            });
+            userWallet = await this.walletsRepository.save(userWallet);
+        }
 
         // Determinar roles según tipo de anuncio
         let buyerWalletId: string, sellerWalletId: string;
         if (ad.type === AdType.SELL) {
             buyerWalletId = userWallet.id;
-            const sellerWallet = ad.user.wallets.find(w => w.coin.id === ad.coin.id);
+            const sellerWallet = await this.walletsRepository.findOne({ where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } } });
             if (!sellerWallet) throw new Error("Ad owner does not have a wallet for this coin");
             sellerWalletId = sellerWallet.id;
         } else {
-            const buyerWallet = ad.user.wallets.find(w => w.coin.id === ad.coin.id);
+            const buyerWallet = await this.walletsRepository.findOne({ where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } } });
             if (!buyerWallet) throw new Error("Ad owner does not have a wallet for this coin");
             buyerWalletId = buyerWallet.id;
             sellerWalletId = userWallet.id;
         }
-        if (!buyerWalletId || !sellerWalletId) throw new Error("Ad owner does not have a wallet for this coin");
 
         // Iniciar la transacción P2P
         const transaction = await this.transactionsService.startTrade({
@@ -76,6 +83,8 @@ export class AdsService {
             sellerWalletId,
             amount: dto.amount,
             description: ad.description,
+            buyerUserId: user.id,
+            coinId: ad.coin.id,
         });
 
         // Actualizar el monto disponible en el anuncio
