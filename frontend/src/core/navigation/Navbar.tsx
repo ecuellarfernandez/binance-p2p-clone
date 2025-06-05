@@ -12,28 +12,28 @@ export default function Navbar() {
         <nav className="bg-white dark:bg-gray-800 shadow-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
-                    <div className="flex">
+                    <div className="flex items-center">
                         <div className="flex-shrink-0 flex items-center">
                             <Link to="/" className="text-2xl font-bold text-yellow-500">
                                 Binancecito
                             </Link>
                         </div>
                         {token && (
-                            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                                <Link to="/wallets" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                            <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
+                                <Link to="/wallets" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium inline-flex items-center h-full">
                                     Billeteras
                                 </Link>
-                                <Link to="/coins" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                <Link to="/coins" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium inline-flex items-center h-full">
                                     Coins
                                 </Link>
-                                <Link to="/my-ads" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                <Link to="/my-ads" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium inline-flex items-center h-full">
                                     Mis anuncios
                                 </Link>
-                                <Link to="/transfer" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                <Link to="/transfer" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium inline-flex items-center h-full">
                                     Transferir
                                 </Link>
                                 {user?.role === "admin" && (
-                                    <Link to="/admin" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium">
+                                    <Link to="/admin" className="text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 font-medium inline-flex items-center h-full">
                                         Administración
                                     </Link>
                                 )}
