@@ -67,53 +67,74 @@ export class AdsService {
     }
 
     async selectAd(user: User, dto: SelectAdDto) {
-        const ad = await this.adsRepository.findOne({ where: { id: dto.adId, active: true }, relations: ["user", "coin"] });
-        if (!ad) throw new Error("Ad not found or inactive");
-        if (dto.amount > ad.amount) throw new Error("Amount exceeds ad availability");
-        if (ad.user.id === user.id) throw new Error("Cannot trade with your own ad");
-
-        // Verificar o crear la billetera del usuario que inicia la transacción
-        let userWallet = await this.walletsRepository.findOne({ where: { user: { id: user.id }, coin: { id: ad.coin.id } } });
-        if (!userWallet) {
-            // Crear billetera automáticamente si no existe
-            userWallet = this.walletsRepository.create({
-                user,
-                coin: ad.coin,
-                balance: 0, // Inicializar con saldo 0
+        // Usar transacción para garantizar la integridad de los datos
+        return await this.adsRepository.manager.transaction(async transactionalEntityManager => {
+            // Bloquear el anuncio para evitar selecciones simultáneas
+            const ad = await transactionalEntityManager.findOne(Ad, {
+                where: { id: dto.adId, active: true },
+                relations: ["user", "coin"],
+                lock: { mode: "pessimistic_write" },
             });
-            userWallet = await this.walletsRepository.save(userWallet);
-        }
 
-        // Determinar roles según tipo de anuncio
-        let buyerWalletId: string, sellerWalletId: string;
-        if (ad.type === AdType.SELL) {
-            buyerWalletId = userWallet.id;
-            const sellerWallet = await this.walletsRepository.findOne({ where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } } });
-            if (!sellerWallet) throw new Error("Ad owner does not have a wallet for this coin");
-            sellerWalletId = sellerWallet.id;
-        } else {
-            const buyerWallet = await this.walletsRepository.findOne({ where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } } });
-            if (!buyerWallet) throw new Error("Ad owner does not have a wallet for this coin");
-            buyerWalletId = buyerWallet.id;
-            sellerWalletId = userWallet.id;
-        }
+            if (!ad) throw new BadRequestException("Anuncio no encontrado o inactivo");
+            if (dto.amount > ad.amount) throw new BadRequestException("La cantidad excede la disponibilidad del anuncio");
+            if (ad.user.id === user.id) throw new BadRequestException("No puedes operar con tu propio anuncio");
 
-        // Iniciar la transacción P2P
-        const transaction = await this.transactionsService.startTrade({
-            buyerWalletId,
-            sellerWalletId,
-            amount: dto.amount,
-            description: ad.description,
-            buyerUserId: user.id,
-            coinId: ad.coin.id,
+            // Verificar o crear la billetera del usuario que inicia la transacción
+            let userWallet = await transactionalEntityManager.findOne(Wallet, {
+                where: { user: { id: user.id }, coin: { id: ad.coin.id } },
+                relations: ["user", "coin"],
+            });
+
+            if (!userWallet) {
+                // Crear billetera automáticamente si no existe
+                userWallet = transactionalEntityManager.create(Wallet, {
+                    user,
+                    coin: ad.coin,
+                    balance: 0, // Inicializar con saldo 0
+                });
+                userWallet = await transactionalEntityManager.save(userWallet);
+            }
+
+            // Determinar roles según tipo de anuncio
+            let buyerWalletId: string, sellerWalletId: string, buyerUserId: string;
+            if (ad.type === AdType.SELL) {
+                buyerWalletId = userWallet.id;
+                buyerUserId = user.id;
+                const sellerWallet = await transactionalEntityManager.findOne(Wallet, {
+                    where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } },
+                    relations: ["user", "coin"],
+                });
+                if (!sellerWallet) throw new BadRequestException("El propietario del anuncio no tiene una billetera para esta moneda");
+                sellerWalletId = sellerWallet.id;
+            } else {
+                const buyerWallet = await transactionalEntityManager.findOne(Wallet, {
+                    where: { user: { id: ad.user.id }, coin: { id: ad.coin.id } },
+                    relations: ["user", "coin"],
+                });
+                if (!buyerWallet) throw new BadRequestException("El propietario del anuncio no tiene una billetera para esta moneda");
+                buyerWalletId = buyerWallet.id;
+                buyerUserId = ad.user.id;
+                sellerWalletId = userWallet.id;
+            }
+
+            // Iniciar la transacción P2P
+            const transaction = await this.transactionsService.startTrade({
+                buyerWalletId,
+                sellerWalletId,
+                amount: dto.amount,
+                description: ad.description,
+                buyerUserId: buyerUserId,
+                coinId: ad.coin.id,
+            });
+
+            // Actualizar el monto disponible en el anuncio
+            ad.amount -= dto.amount;
+            if (ad.amount <= 0) ad.active = false;
+            await transactionalEntityManager.save(ad);
+
+            return transaction;
         });
-
-        // Actualizar el monto disponible en el anuncio
-        ad.amount -= dto.amount;
-        if (ad.amount <= 0) ad.active = false;
-        await this.adsRepository.save(ad);
-
-        return transaction;
     }
 
     async getMyAds(userId: string) {
