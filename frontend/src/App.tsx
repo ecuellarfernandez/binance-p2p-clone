@@ -9,6 +9,7 @@ import { MessageProvider } from "./core/messages/MessageContext";
 import CoinsPage from "./coins/CoinsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import AllAdsPage from "./ads/AllAdsPage";
+import WalletTransactions from "./wallets/WalletTransactions";
 
 export default function App() {
     return (
@@ -58,6 +59,16 @@ export default function App() {
                                 </ProtectedRoute>
                             }
                         ></Route>
+                        <Route
+                            path="/wallets/:id/transactions"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <WalletTransactions />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
                     </Routes>
                 </Router>
             </AuthProvider>

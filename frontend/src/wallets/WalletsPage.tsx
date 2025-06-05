@@ -55,6 +55,13 @@ export default function WalletsPage() {
                                         Vender
                                     </button>
                                 )}
+                                {/* Botón para Ver Movimientos */}
+                                <button
+                                    onClick={() => navigate(`/wallets/${wallet.id}/transactions`)}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
+                                >
+                                    Ver Movimientos
+                                </button>
                             </div>
                         </li>
                     ))}
