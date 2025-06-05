@@ -10,6 +10,9 @@ import CoinsPage from "./coins/CoinsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import WalletTransactions from "./wallets/WalletTransactions";
 import MyAdsPage from "./ads/MyAdsPage";
+import AdminPage from "./admin/AdminPage";
+import AdminCoinsPage from "./admin/AdminCoinsPage";
+import TransferPage from "./transfer/TransferPage";
 
 export default function App() {
     return (
@@ -68,7 +71,37 @@ export default function App() {
                                     </Layout>
                                 </ProtectedRoute>
                             }
-                        ></Route>
+                        />
+                        <Route
+                            path="/transfer"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <TransferPage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <AdminPage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/coins"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <AdminCoinsPage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
                     </Routes>
                 </Router>
             </AuthProvider>
