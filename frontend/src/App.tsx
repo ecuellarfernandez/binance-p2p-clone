@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./auth/LoginPage";
 import WalletsPage from "./wallets/WalletsPage";
 import TradePage from "./ads/TradePage";
@@ -13,6 +13,13 @@ import MyAdsPage from "./ads/MyAdsPage";
 import AdminPage from "./admin/AdminPage";
 import AdminCoinsPage from "./admin/AdminCoinsPage";
 import TransferPage from "./transfer/TransferPage";
+import { useAuth } from "./auth/AuthContext";
+
+// Componente para manejar la redirección en la ruta raíz
+function RootRedirect() {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? <Navigate to="/wallets" replace /> : <Navigate to="/login" replace />;
+}
 
 export default function App() {
     return (
@@ -21,6 +28,8 @@ export default function App() {
                 <Router>
                     <MessageDisplay />
                     <Routes>
+                        {/* Ruta raíz que redirige según el estado de autenticación */}
+                        <Route path="/" element={<RootRedirect />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route
                             path="/wallets"
@@ -102,6 +111,8 @@ export default function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        {/* Ruta para manejar URLs no encontradas */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </Router>
             </AuthProvider>
