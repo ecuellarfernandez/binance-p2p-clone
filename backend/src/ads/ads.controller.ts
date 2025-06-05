@@ -18,8 +18,8 @@ export class AdsController {
         return this.adsService.create(req.user, dto, file ? `/uploads/${file.filename}` : undefined);
     }
     @Get()
-    list(@Query("coinId") coinId: string, @Query("type") type: AdType) {
-        return this.adsService.list(coinId, type);
+    list(@Query("coinId") coinId: string, @Query("type") type: AdType, @Request() req) {
+        return this.adsService.list(coinId, type, req.user.id);
     }
 
     @Post("select")

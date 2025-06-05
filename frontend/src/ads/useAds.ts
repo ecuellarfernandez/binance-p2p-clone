@@ -44,14 +44,13 @@ export function useAds(coinId: string, type: "buy" | "sell", token: string) {
         }
     };
 
-    const createAd = async (walletId: string, adType: "buy" | "sell", amount: number, price: number, description: string) => {
+    const createAd = async (walletId: string, adType: "buy" | "sell", amount: number, price: number, description: string, coinId: string) => {
         try {
             const response = await apiFetch(`/ads`, {
                 method: "POST",
                 token,
-                body: { walletId, type: adType, amount, price, description },
+                body: { walletId, type: adType, amount, price, description, coinId },
             });
-            setAds(prevAds => [...prevAds, response]);
             return response;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {

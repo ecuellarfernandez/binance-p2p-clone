@@ -20,6 +20,10 @@ export default function TradePage() {
     const [price, setPrice] = useState<number>(0);
     const [description, setDescription] = useState("");
 
+    // Obtener el nombre de la moneda desde las billeteras
+    const wallet = wallets.find(w => w.coin.id === coinId);
+    const coinName = wallet?.coin.name || "Moneda desconocida";
+
     const handleSelectAd = async (adId: string) => {
         try {
             if (!user) {
@@ -27,7 +31,6 @@ export default function TradePage() {
                 return;
             }
 
-            const wallet = wallets.find(w => w.coin.id === coinId);
             if (!wallet) {
                 setMessage({ text: "No tienes una billetera para esta moneda.", type: "error" });
                 return;
@@ -41,7 +44,10 @@ export default function TradePage() {
             setMessage({ text: error.message, type: "error" });
         }
     };
-
+    if (!coinId || typeof coinId !== "string") {
+        setMessage({ text: "El ID de la moneda no es válido.", type: "error" });
+        return;
+    }
     const handleCreateAd = async () => {
         try {
             if (!user) {
@@ -54,13 +60,13 @@ export default function TradePage() {
                 return;
             }
 
-            const wallet = wallets.find(w => w.coin.id === coinId);
             if (!wallet) {
                 setMessage({ text: "No tienes una billetera para esta moneda.", type: "error" });
                 return;
             }
 
-            await createAd(wallet.id, type, amount, price, description);
+            // Asegúrate de pasar coinId al crear el anuncio
+            await createAd(wallet.id, type, amount, price, description, coinId!);
             setMessage({ text: "Anuncio creado exitosamente.", type: "success" });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
@@ -120,7 +126,9 @@ export default function TradePage() {
                 </div>
 
                 <div className="mt-8">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Crear Anuncio</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        Crear Anuncio de {type === "buy" ? "Compra" : "Venta"} para {coinName}
+                    </h3>
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">

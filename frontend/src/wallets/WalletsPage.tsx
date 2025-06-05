@@ -38,12 +38,24 @@ export default function WalletsPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Saldo: {wallet.balance}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Valor en USD: ${wallet.coin.valueInUsd.toFixed(2)}</p>
                             </div>
-                            <button
-                                onClick={() => navigate(`/trade/${wallet.coin.id}`, { state: { type: "buy" } })}
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md"
-                            >
-                                Comprar/Vender
-                            </button>
+                            <div className="flex space-x-2">
+                                {/* Botón de Comprar siempre habilitado */}
+                                <button
+                                    onClick={() => navigate(`/trade/${wallet.coin.id}`, { state: { type: "buy" } })}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md"
+                                >
+                                    Comprar
+                                </button>
+                                {/* Botón de Vender habilitado solo si hay saldo */}
+                                {wallet.balance > 0 && (
+                                    <button
+                                        onClick={() => navigate(`/trade/${wallet.coin.id}`, { state: { type: "sell" } })}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md"
+                                    >
+                                        Vender
+                                    </button>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>

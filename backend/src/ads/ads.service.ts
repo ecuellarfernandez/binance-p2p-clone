@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Not, Repository } from "typeorm";
 import { Ad, AdType } from "./entity/ad.entity";
 import { CreateAdDto } from "./dtos/create-ad.dto";
 import { User } from "src/users/user.model";
@@ -38,9 +38,14 @@ export class AdsService {
         }
     }
 
-    async list(coinId: string, type: AdType) {
+    async list(coinId: string, type: AdType, userId: string) {
         return this.adsRepository.find({
-            where: { coin: { id: coinId }, type, active: true },
+            where: {
+                coin: { id: coinId },
+                type: type,
+                active: true,
+                user: { id: Not(userId) },
+            },
             order: { createdAt: "DESC" },
         });
     }
