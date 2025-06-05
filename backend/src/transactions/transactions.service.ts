@@ -19,10 +19,22 @@ export class TransactionsService {
 
     // Iniciar compra/venta entre dos usuarios (P2P)
     async startTrade(dto: StartTradeDto) {
-        const buyerWallet = await this.walletsRepository.findOne({ where: { id: dto.buyerWalletId }, relations: ["user", "coin"] });
+        let buyerWallet = await this.walletsRepository.findOne({ where: { id: dto.buyerWalletId }, relations: ["user", "coin"] });
         const sellerWallet = await this.walletsRepository.findOne({ where: { id: dto.sellerWalletId }, relations: ["user", "coin"] });
 
-        if (!buyerWallet || !sellerWallet) throw new NotFoundException("Wallet not found");
+        if (!buyerWallet) {
+            // Crear billetera automáticamente para el comprador si no existe
+            const coin = await this.walletsRepository.findOne({ where: { id: dto.coinId } });
+            if (!coin) throw new NotFoundException("Coin not found");
+            buyerWallet = this.walletsRepository.create({
+                user: { id: dto.buyerUserId } as User,
+                coin,
+                balance: 0,
+            });
+            buyerWallet = await this.walletsRepository.save(buyerWallet);
+        }
+
+        if (!sellerWallet) throw new NotFoundException("Seller wallet not found");
         if (sellerWallet.balance < dto.amount) throw new BadRequestException("Seller has insufficient funds");
 
         const transaction = this.transactionsRepository.create({

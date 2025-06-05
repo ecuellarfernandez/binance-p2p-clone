@@ -1,16 +1,26 @@
-import { IsString, IsNumber, IsOptional } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class StartTradeDto {
     @IsString()
+    @IsNotEmpty()
     buyerWalletId: string;
 
     @IsString()
+    @IsNotEmpty()
     sellerWalletId: string;
 
     @IsNumber()
+    @IsNotEmpty()
     amount: number;
 
-    @IsOptional()
     @IsString()
     description?: string;
+
+    @IsString()
+    @IsNotEmpty()
+    buyerUserId: string;
+
+    @IsString()
+    @IsNotEmpty()
+    coinId: string;
 }

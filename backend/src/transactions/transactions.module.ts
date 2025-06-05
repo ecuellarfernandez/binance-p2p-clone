@@ -8,7 +8,7 @@ import { AdsModule } from "src/ads/ads.module";
 import { UsersModule } from "src/users/users.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Transaction, Wallet]), forwardRef(() => AdsModule), UsersModule],
+    imports: [TypeOrmModule.forFeature([Transaction, Wallet]), forwardRef(() => AdsModule), forwardRef(() => UsersModule), forwardRef(() => AdsModule)],
     providers: [TransactionsService],
     controllers: [TransactionsController],
     exports: [TransactionsService],
