@@ -14,9 +14,9 @@ export class AdsController {
     @Post()
     @UseInterceptors(FileInterceptor("paymentInstructionsImage"))
     create(@Request() req, @Body() dto: CreateAdDto, @UploadedFile() file?: Express.Multer.File) {
+        console.log("DTO recibido:", dto); // Verifica si price y amount son números
         return this.adsService.create(req.user, dto, file ? `/uploads/${file.filename}` : undefined);
     }
-
     @Get()
     list(@Query("coinId") coinId: string, @Query("type") type: AdType) {
         return this.adsService.list(coinId, type);

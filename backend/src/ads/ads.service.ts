@@ -23,15 +23,19 @@ export class AdsService {
     ) {}
 
     async create(user: User, dto: CreateAdDto, paymentInstructionsImage?: string) {
-        const coin = await this.coinsRepository.findOne({ where: { id: dto.coinId } });
-        if (!coin) throw new Error("Coin not found");
-        const ad = this.adsRepository.create({
-            ...dto,
-            user,
-            coin,
-            paymentInstructionsImage,
-        });
-        return this.adsRepository.save(ad);
+        try {
+            const coin = await this.coinsRepository.findOne({ where: { id: dto.coinId } });
+            if (!coin) throw new Error("Coin not found");
+            const ad = this.adsRepository.create({
+                ...dto,
+                user,
+                coin,
+                paymentInstructionsImage,
+            });
+            return await this.adsRepository.save(ad);
+        } catch (error) {
+            throw new Error(`Error creating ad: ${error.message}`);
+        }
     }
 
     async list(coinId: string, type: AdType) {
