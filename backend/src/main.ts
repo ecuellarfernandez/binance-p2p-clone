@@ -7,8 +7,13 @@ async function bootstrap() {
     app.enableCors({
         origin: "*",
     });
-    app.useGlobalPipes(new ValidationPipe());
-
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            whitelist: true,
+        }),
+    );
+    app.useGlobalInterceptors();
     await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();
