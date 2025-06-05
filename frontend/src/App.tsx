@@ -1,10 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./auth/LoginPage";
 import WalletsPage from "./wallets/WalletsPage";
+import TradePage from "./ads/TradePage";
 import { AuthProvider } from "./auth/AuthContext";
 import Layout from "./core/layout/Layout";
 import MessageDisplay from "./core/messages/MessageDisplay";
 import { MessageProvider } from "./core/messages/MessageContext";
+import CoinsPage from "./coins/CoinsPage";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 export default function App() {
     return (
@@ -17,12 +20,33 @@ export default function App() {
                         <Route
                             path="/wallets"
                             element={
-                                <Layout>
-                                    <WalletsPage />
-                                </Layout>
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <WalletsPage />
+                                    </Layout>
+                                </ProtectedRoute>
                             }
                         />
-                        {/* Agrega más rutas aquí */}
+                        <Route
+                            path="/coins"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <CoinsPage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/trade/:coinId"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <TradePage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
                     </Routes>
                 </Router>
             </AuthProvider>
