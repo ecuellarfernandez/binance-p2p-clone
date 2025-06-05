@@ -1,7 +1,9 @@
 import { useWallets } from "./useWallets";
+import { useNavigate } from "react-router-dom";
 
 export default function WalletsPage() {
     const { wallets, loading, error } = useWallets();
+    const navigate = useNavigate();
 
     if (loading)
         return (
@@ -16,6 +18,18 @@ export default function WalletsPage() {
                 <div className="text-red-500 text-lg font-semibold">Error: {error}</div>
             </div>
         );
+
+    const handleViewMovements = (walletId: string) => {
+        navigate(`/wallets/${walletId}/movements`);
+    };
+
+    const handleTransfer = (walletId: string) => {
+        navigate(`/wallets/${walletId}/transfer`);
+    };
+
+    const handleTrade = (walletId: string) => {
+        navigate(`/wallets/${walletId}/trade`);
+    };
 
     return (
         <div className="bg-gray-100 dark:bg-gray-900 min-h-screen py-8">
@@ -32,8 +46,19 @@ export default function WalletsPage() {
                                         {wallet.coin.name} ({wallet.coin.symbol})
                                     </span>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Saldo: {wallet.balance}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Valor en USD: ${wallet.coin.valueInUsd.toFixed(2)}</p>
                                 </div>
-                                <div className="text-yellow-500 font-bold">${wallet.coin.valueInUsd.toFixed(2)}</div>
+                                <div className="flex space-x-2">
+                                    <button onClick={() => handleViewMovements(wallet.id)} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">
+                                        Movimientos
+                                    </button>
+                                    <button onClick={() => handleTransfer(wallet.id)} className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">
+                                        Transferir
+                                    </button>
+                                    <button onClick={() => handleTrade(wallet.id)} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md">
+                                        Comprar/Vender
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>
