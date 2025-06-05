@@ -115,4 +115,11 @@ export class AdsService {
 
         return transaction;
     }
+
+    async findAllAds() {
+        return this.adsRepository.find({
+            relations: ["coin", "user"], // Incluir relaciones necesarias
+            order: { createdAt: "DESC" },
+        });
+    }
 }

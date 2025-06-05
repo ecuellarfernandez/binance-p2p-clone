@@ -8,6 +8,7 @@ import MessageDisplay from "./core/messages/MessageDisplay";
 import { MessageProvider } from "./core/messages/MessageContext";
 import CoinsPage from "./coins/CoinsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import AllAdsPage from "./ads/AllAdsPage";
 
 export default function App() {
     return (
@@ -16,7 +17,7 @@ export default function App() {
                 <Router>
                     <MessageDisplay />
                     <Routes>
-                        <Route path="/" element={<LoginPage />} />
+                        <Route path="/login" element={<LoginPage />} />
                         <Route
                             path="/wallets"
                             element={
@@ -47,6 +48,16 @@ export default function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/ads"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout>
+                                        <AllAdsPage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        ></Route>
                     </Routes>
                 </Router>
             </AuthProvider>
